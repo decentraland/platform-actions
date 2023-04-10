@@ -13,9 +13,11 @@ on:
         required: true
 
 jobs:
-  cd-dev:
+  build-quay:
     if: ${{ github.actor != 'dependabot[bot]' }}
     uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
     with:
       service-name: ${{ inputs.service-name }}
     secrets: inherit
+  title:
+    uses: decentraland/actions/.github/workflows/validate-pr-title.yml@main
