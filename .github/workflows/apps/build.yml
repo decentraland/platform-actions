@@ -1,7 +1,7 @@
-name: node
+name: build-app
 
 on:
-  push:
+  workflow_call:
 
 jobs:
   build:

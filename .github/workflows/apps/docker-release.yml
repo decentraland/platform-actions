@@ -1,4 +1,4 @@
-name: CI/CD on PR
+name: Publish 'latest' image
 
 on:
   workflow_call:
@@ -13,11 +13,10 @@ on:
         required: true
 
 jobs:
-  build-quay:
-    if: ${{ github.actor != 'dependabot[bot]' }}
+  cd:
     uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
     with:
       service-name: ${{ inputs.service-name }}
+      docker-tag: latest ${{ github.event.release.tag_name }}
+      build-args: CURRENT_VERSION=${{ github.event.release.tag_name }}
     secrets: inherit
-  title:
-    uses: decentraland/actions/.github/workflows/validate-pr-title.yml@main
