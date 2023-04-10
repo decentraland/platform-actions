@@ -15,7 +15,8 @@ fi
 
 NAME=$1
 
-mkdir -p $NAME/.github/workflows
-cp apps-template/*.yml $NAME/.github/workflows
+mkdir -p $NAME
+cp -r apps-template/ $NAME/
+mv $NAME/apps-template $NAME/.github
 
 sed -i "s/\$SERVICE_NAME/${NAME}/g" $NAME/.github/workflows/*.yml
