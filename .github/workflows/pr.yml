@@ -1,14 +1,19 @@
 name: CI/CD on PR
 
 on:
-  pull_request:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+    secrets:
+      QUAY_USERNAME:
+        required: true
+      QUAY_TOKEN:
+        required: true
 
 jobs:
   cd-dev:
     if: ${{ github.actor != 'dependabot[bot]' }}
     uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
-    with:
-      service-name: ${{ github.event.repository.name }}
-    secrets:
-      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
-      QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+    secrets: inherit
