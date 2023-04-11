@@ -1,9 +1,5 @@
 on:
   workflow_call:
-    inputs:
-      service-name:
-        required: true
-        type: string
     secrets:
       SDK_TEAM_S3_BUCKET:
         required: true
