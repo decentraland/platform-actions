@@ -18,4 +18,5 @@ jobs:
     uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
     with:
       service-name: ${{ inputs.service-name }}
+      docker-tag: '${{ github.sha }}'
     secrets: inherit
