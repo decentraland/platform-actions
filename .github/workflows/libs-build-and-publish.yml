@@ -20,6 +20,8 @@ name: build-publish
 jobs:
   check_and_build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     outputs:
       s3_bucket_key: ${{ steps.publish_package.outputs.s3-bucket-key }}
     steps:
