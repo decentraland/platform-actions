@@ -3,6 +3,9 @@ name: Publish 'latest' image
 on:
   workflow_call:
     inputs:
+      dockerfile-url:
+        required: false
+        type: string
       service-name:
         required: true
         type: string
@@ -17,10 +20,16 @@ on:
 
 jobs:
   cd:
-    uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
-    with:
-      service-name: ${{ inputs.service-name }}
-      deployment-environment: ${{ inputs.deployment-environment }}
-      docker-tag: latest ${{ github.event.release.tag_name }}
-      build-args: CURRENT_VERSION=${{ github.event.release.tag_name }}
-    secrets: inherit
+    steps:
+    - name: wget
+      uses: wei/wget@v1
+      with:
+        args: -O Dockerfile ${{ inputs.dockerfile-url }}
+    - name: build
+      uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
+      with:
+        service-name: ${{ inputs.service-name }}
+        deployment-environment: ${{ inputs.deployment-environment }}
+        docker-tag: latest ${{ github.event.release.tag_name }}
+        build-args: CURRENT_VERSION=${{ github.event.release.tag_name }}
+      secrets: inherit
