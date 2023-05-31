@@ -6,13 +6,6 @@ on:
       service-name:
         required: true
         type: string
-      deployment-environment:
-        required: false
-        type: string
-      docker-tag:
-        required: false
-        type: string
-        default: latest
       build-args:
         required: false
         type: string
@@ -56,7 +49,7 @@ jobs:
         with:
           image: ${{ inputs.service-name }}
           layers: ${{ inputs.layers }}
-          tags: ${{ github.sha }} ${{ inputs.docker-tag }} ${{ github.event.pull_request.head.sha }}
+          tags: ${{ github.sha }} ${{ github.event.pull_request.head.sha }}
           dockerfiles: |
             ./Dockerfile
           build-args: |

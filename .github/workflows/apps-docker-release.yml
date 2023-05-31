@@ -76,3 +76,18 @@ jobs:
 
       - name: Print image url
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+
+  deployment:
+    if: ${{ inputs.deployment-environment }}
+    needs: [quay-build-push]
+    name: "Deploy to: ${{ inputs.deployment-environment }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment
+        id: deploy
+        uses: decentraland/dcl-deploy-action@main
+        with:
+          dockerImage: "${{ needs.quay-build-push.outputs.registry-path }}"
+          serviceName: ${{ inputs.service-name }}
+          env: ${{ inputs.deployment-environment }}
+          token: ${{ secrets.GITHUB_TOKEN }}
