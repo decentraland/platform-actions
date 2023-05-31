@@ -1,6 +1,6 @@
 ARG RUN
 
-FROM node:lts as builderenv
+FROM node:lts-slim as builderenv
 
 WORKDIR /app
 
@@ -31,11 +31,10 @@ RUN yarn install --prod --frozen-lockfile
 
 ########################## END OF BUILD STAGE ##########################
 
-FROM node:lts
+FROM node:lts-slim
 
 RUN apt-get update
 RUN apt-get upgrade -y
-
 
 # NODE_ENV is used to configure some runtime options, like JSON logger
 ENV NODE_ENV production
@@ -56,4 +55,3 @@ COPY --from=builderenv /tini /tini
 ENTRYPOINT ["/tini", "--"]
 # Run the program under Tini
 CMD [ "/usr/local/bin/node", "--trace-warnings", "--abort-on-uncaught-exception", "--unhandled-rejections=strict", "dist/index.js" ]
-
