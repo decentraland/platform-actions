@@ -3,6 +3,9 @@ name: CI/CD on main branch
 on:
   workflow_call:
     inputs:
+      dockerfile-url:
+        required: false
+        type: string
       service-name:
         required: true
         type: string
@@ -16,6 +19,15 @@ on:
         required: true
 
 jobs:
+  dockerfile:
+    if: ${{ inputs.dockerfile-url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: wget
+      uses: wei/wget@v1
+      with:
+        args: -O Dockerfile ${{ inputs.dockerfile-url }}
+
   cd:
     uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
     with:
