@@ -3,6 +3,9 @@ name: CI/CD on PR for apps
 on:
   workflow_call:
     inputs:
+      dockerfile-url:
+        required: false
+        type: string
       service-name:
         required: true
         type: string
@@ -13,6 +16,15 @@ on:
         required: true
 
 jobs:
+  dockerfile:
+    if: ${{ inputs.dockerfile-url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: wget
+      uses: wei/wget@v1
+      with:
+        args: -O Dockerfile ${{ inputs.dockerfile-url }}
+
   build-quay:
     if: ${{ github.actor != 'dependabot[bot]' }}
     uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
