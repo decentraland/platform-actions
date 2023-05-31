@@ -36,7 +36,6 @@ on:
         description: "Registry paths (JSON)"
         value: ${{ jobs.quay-build-push.registry-paths }}
 
-
 jobs:
   quay-build-push:
     if: ${{ github.actor != 'dependabot[bot]' }}
