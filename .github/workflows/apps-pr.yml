@@ -16,19 +16,17 @@ on:
         required: true
 
 jobs:
-  dockerfile:
-    if: ${{ inputs.dockerfile-url }}
-    runs-on: ubuntu-latest
+  build-quay:
     steps:
     - name: wget
+      if: ${{ inputs.dockerfile-url }}
       uses: wei/wget@v1
       with:
         args: -O Dockerfile ${{ inputs.dockerfile-url }}
-
-  build-quay:
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
-    with:
-      service-name: ${{ inputs.service-name }}
-      docker-tag: '${{ github.event.pull_request.head.sha }}'
-    secrets: inherit
+    - name: build
+      if: ${{ github.actor != 'dependabot[bot]' }}
+      uses: decentraland/actions/.github/workflows/build-quay-main.yml@main
+      with:
+        service-name: ${{ inputs.service-name }}
+        docker-tag: '${{ github.event.pull_request.head.sha }}'
+      secrets: inherit
