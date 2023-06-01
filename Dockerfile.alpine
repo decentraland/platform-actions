@@ -18,8 +18,8 @@ COPY . /app
 ARG COMMIT_HASH
 RUN echo "COMMIT_HASH=$COMMIT_HASH" >> .env
 
-RUN yarn test
 RUN yarn build
+RUN yarn test
 
 # remove devDependencies, keep only used dependencies
 RUN yarn install --prod --frozen-lockfile
