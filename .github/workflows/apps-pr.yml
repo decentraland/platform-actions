@@ -38,7 +38,9 @@ jobs:
       registry-paths: ${{ steps.push-to-quay.outputs.registry-paths }}
     steps:
       - uses: actions/checkout@v3
-      - run: [[ -n "${{ inputs.dockerfile-url }}" ]] && wget -O Dockerfile ${{ inputs.dockerfile-url }}
+      - name: download Dockerfile
+        if: ${{ inputs.dockerfile-url }}
+        run: wget -O Dockerfile ${{ inputs.dockerfile-url }}
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
