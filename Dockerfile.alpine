@@ -34,6 +34,12 @@ RUN apk add --no-cache tini
 # NODE_ENV is used to configure some runtime options, like JSON logger
 ENV NODE_ENV production
 
+ARG COMMIT_HASH=local
+ENV COMMIT_HASH=${COMMIT_HASH:-local}
+
+ARG CURRENT_VERSION=Unknown
+ENV CURRENT_VERSION=${CURRENT_VERSION:-Unknown}
+
 WORKDIR /app
 COPY --from=builderenv /app /app
 
