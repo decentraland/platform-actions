@@ -6,35 +6,40 @@ on:
       service-name:
         required: true
         type: string
+        description: 'Service name to deploy'
       deployment-environment:
-        required: false
+        required: true
         type: string
+        description: 'Target environment'
       docker-tag:
         required: false
         type: string
-        default: latest
+        description: 'Docker tag to label the released image'
       build-args:
         required: false
         type: string
+        description: 'Any arguments needed to build the docker image'
       layers:
         required: false
         type: boolean
         default: true
+        description: 'Indicates if the Docker layers cache mechanism should be used. Default value: true'
       dockerfile-url:
         required: false
         type: string
+        description: 'Place the URL from where the Dockerfile should be downloaded'
     secrets:
       QUAY_USERNAME:
         required: true
       QUAY_TOKEN:
         required: true
-    outputs:
-      registry-path:
-        description: "Registry path"
-        value: ${{ jobs.quay-build-push.registry-path }}
-      registry-paths:
-        description: "Registry paths (JSON)"
-        value: ${{ jobs.quay-build-push.registry-paths }}
+    # outputs:
+    #   registry-path:
+    #     description: "Registry path"
+    #     value: ${{ needs.quay-build-push.registry-path }}
+    #   registry-paths:
+    #     description: "Registry paths (JSON)"
+    #     value: ${{ needs.quay-build-push.registry-paths }}
 
 jobs:
   quay-build-push:
@@ -53,12 +58,15 @@ jobs:
         with:
           image: ${{ inputs.service-name }}
           layers: ${{ inputs.layers }}
-          tags: ${{ github.sha }} latest ${{ github.event.release.tag_name }} ${{ inputs.docker-tag }}
+          tags: |-
+            ${{ github.sha }}
+            ${{ inputs.docker-tag }}
+            ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           dockerfiles: |
             ./Dockerfile
           build-args: |
             ${{ inputs.build-args }}
-            CURRENT_VERSION=${{ github.event.release.tag_name }}
+            CURRENT_VERSION=${{ github.ref_name }}
             COMMIT_HASH=${{ github.sha }}
       # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
       # in which case 'username' and 'password' can be omitted.
