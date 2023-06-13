@@ -1,0 +1,36 @@
+name: Manual deployment
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+        description: 'Service name to deploy'
+      deployment-environment:
+        required: true
+        type: string
+        description: 'Target environment'
+      quay-registry-path:
+        required: true
+        type: string
+        description: 'The registry path from quay of the Docker image to deploy. Check "Print image url" step'
+    secrets:
+      QUAY_USERNAME:
+        required: true
+      QUAY_TOKEN:
+        required: true
+
+jobs:
+  deployment:
+    name: "Deploy to: ${{ inputs.deployment-environment }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment
+        id: deploy
+        uses: decentraland/dcl-deploy-action@main
+        with:
+          dockerImage: "${{ inputs.quay-registry-path }}"
+          serviceName: ${{ inputs.service-name }}
+          env: ${{ inputs.deployment-environment }}
+          token: ${{ secrets.GITHUB_TOKEN }}
