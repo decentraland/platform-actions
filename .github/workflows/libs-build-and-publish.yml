@@ -35,7 +35,7 @@ jobs:
       - name: validate
         run: yarn lint:check
       - name: publish packages
-        uses: menduz/oddish-action@master
+        uses: menduz/oddish-action@chore/aws-sdk-3
         id: publish_package
         with:
           registry-url: 'https://registry.npmjs.org'
