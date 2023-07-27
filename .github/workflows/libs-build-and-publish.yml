@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      run-pre-publish:
+        required: false
+        type: boolean
+        default: false
     secrets:
       SDK_TEAM_S3_BASE_URL:
         required: true
@@ -34,6 +39,9 @@ jobs:
         run: yarn test
       - name: validate
         run: yarn lint:check
+      - name: pre-publish
+        if: ${{ inputs.run-pre-publish }}
+        run: yarn pre-publish
       - name: publish packages
         uses: menduz/oddish-action@master
         id: publish_package
