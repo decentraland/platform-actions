@@ -1,7 +1,7 @@
 on:
   workflow_call:
     inputs:
-      run-prepublish:
+      run-pre-publish:
         required: false
         type: boolean
         default: false
@@ -40,8 +40,8 @@ jobs:
       - name: validate
         run: yarn lint:check
       - name: pre-publish
-        if: ${{ inputs.run-prepublish }}
-        run: yarn prepublish
+        if: ${{ inputs.run-pre-publish }}
+        run: yarn pre-publish
       - name: publish packages
         uses: menduz/oddish-action@master
         id: publish_package
