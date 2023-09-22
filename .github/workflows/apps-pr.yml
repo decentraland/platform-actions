@@ -31,7 +31,6 @@ on:
 
 jobs:
   quay-build-push:
-    if: ${{ secrets.QUAY_USERNAME && secrets.QUAY_TOKEN }}
     runs-on: ubuntu-latest
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
@@ -56,6 +55,7 @@ jobs:
       # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
       # in which case 'username' and 'password' can be omitted.
       - name: Push To quay.io
+        if: ${{ secrets.QUAY_USERNAME && secrets.QUAY_TOKEN }}
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
