@@ -6,6 +6,9 @@ on:
       service-name:
         required: true
         type: string
+      image-name:
+        required: false
+        type: string
       deployment-environment:
         required: false
         type: string
@@ -51,7 +54,7 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
-          image: ${{ inputs.service-name }}
+          image: ${{ inputs.image-name || inputs.service-name }}
           layers: ${{ inputs.layers }}
           tags: ${{ github.sha }} latest ${{ github.event.release.tag_name }} ${{ inputs.docker-tag }}
           dockerfiles: |
