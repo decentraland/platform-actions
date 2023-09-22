@@ -18,9 +18,9 @@ on:
         type: string
     secrets:
       QUAY_USERNAME:
-        required: true
+        required: false
       QUAY_TOKEN:
-        required: true
+        required: false
     outputs:
       registry-path:
         description: "Registry path"
@@ -31,7 +31,7 @@ on:
 
 jobs:
   quay-build-push:
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: ${{ secrets.QUAY_USERNAME && secrets.QUAY_TOKEN }}
     runs-on: ubuntu-latest
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
