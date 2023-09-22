@@ -35,7 +35,11 @@ jobs:
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
       registry-paths: ${{ steps.push-to-quay.outputs.registry-paths }}
+    env:
+      quay_username: ${{ secrets.QUAY_USERNAME }}
+      quay_token: ${{ secrets.QUAY_TOKEN }}
     steps:
+      - if: ${{ env.quay_username && env.quay_token }}
       - uses: actions/checkout@v3
       - name: download Dockerfile
         if: ${{ inputs.dockerfile-url }}
@@ -55,7 +59,6 @@ jobs:
       # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
       # in which case 'username' and 'password' can be omitted.
       - name: Push To quay.io
-        if: ${{ secrets.QUAY_USERNAME && secrets.QUAY_TOKEN }}
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
