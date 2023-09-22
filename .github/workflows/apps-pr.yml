@@ -31,6 +31,7 @@ on:
 
 jobs:
   quay-build-push:
+    if: ${{ env.quay_username && env.quay_token }}
     runs-on: ubuntu-latest
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
@@ -39,7 +40,6 @@ jobs:
       quay_username: ${{ secrets.QUAY_USERNAME }}
       quay_token: ${{ secrets.QUAY_TOKEN }}
     steps:
-      - if: ${{ env.quay_username && env.quay_token }}
       - uses: actions/checkout@v3
       - name: download Dockerfile
         if: ${{ inputs.dockerfile-url }}
