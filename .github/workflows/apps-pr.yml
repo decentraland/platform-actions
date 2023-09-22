@@ -18,9 +18,9 @@ on:
         type: string
     secrets:
       QUAY_USERNAME:
-        required: true
+        required: false
       QUAY_TOKEN:
-        required: true
+        required: false
     outputs:
       registry-path:
         description: "Registry path"
@@ -31,7 +31,6 @@ on:
 
 jobs:
   quay-build-push:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
@@ -58,6 +57,10 @@ jobs:
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
+        if: ${{ env.quay_username && env.quay_token }}
+        env:
+          quay_username: ${{ secrets.QUAY_USERNAME }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
         with:
           image: ${{ steps.build-image.outputs.image }}
           tags: ${{ steps.build-image.outputs.tags }}
