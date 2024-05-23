@@ -36,7 +36,7 @@ jobs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
       registry-paths: ${{ steps.push-to-quay.outputs.registry-paths }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: download Dockerfile
         if: ${{ inputs.dockerfile-url }}
         run: wget -O Dockerfile ${{ inputs.dockerfile-url }}
