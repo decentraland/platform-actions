@@ -51,3 +51,9 @@ jobs:
         run: yarn test
         env:
           PG_COMPONENT_PSQL_CONNECTION_STRING: postgres://postgres:pass1234@localhost/db
+      - name: report coverage
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          files: ./coverage/lcov.info,./**/coverage/lcov.info,./**/**/coverage/lcov.info
+          debug: true
