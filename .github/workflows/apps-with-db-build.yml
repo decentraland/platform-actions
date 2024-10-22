@@ -51,3 +51,13 @@ jobs:
         run: yarn test
         env:
           PG_COMPONENT_PSQL_CONNECTION_STRING: postgres://postgres:pass1234@localhost/db
+      - name: find coverage files in any workspace or root
+        run: |
+          coverage_files=$(find ./ -type f -name 'lcov.info' -not -path '*/node_modules/*')
+          echo "COVERAGE_FILES=$(echo $coverage_files | tr '\n' ' ')" >> $GITHUB_ENV
+
+      - name: report coverage to coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: $COVERAGE_FILES
