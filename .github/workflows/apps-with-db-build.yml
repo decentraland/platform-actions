@@ -56,4 +56,5 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           files: ./coverage/lcov.info,./**/coverage/lcov.info,./**/**/coverage/lcov.info
+          allow-empty: true
           debug: true
