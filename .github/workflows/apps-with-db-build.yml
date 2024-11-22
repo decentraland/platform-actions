@@ -51,7 +51,7 @@ jobs:
         run: yarn test
         env:
           PG_COMPONENT_PSQL_CONNECTION_STRING: postgres://postgres:pass1234@localhost/db
-      - name: determine repository visibility
+      - name: hide coveralls if repo is private
         id: repo-visibility
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
