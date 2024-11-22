@@ -68,18 +68,19 @@ jobs:
               exit 1
           fi
 
+          echo $IS_PRIVATE
           # Set environment variable for coveralls
-          if [ "$IS_PRIVATE" = true ]; then
-              echo "continue-coveralls=false" >> $GITHUB_ENV
+          if [ "$IS_PRIVATE" = 'true' ]; then
+              echo "continue-coveralls=false" >> $GITHUB_OUTPUT
           else
-              echo "continue-coveralls=true" >> $GITHUB_ENV
+              echo "continue-coveralls=true" >> $GITHUB_OUTPUT
           fi
   
       - name: find coverage files in any workspace or root
         if: steps.repo-visibility.outputs.continue-coveralls == 'true'
         run: |
           coverage_files=$(find ./ -type f -name 'lcov.info' -not -path '*/node_modules/*')
-          echo "COVERAGE_FILES=$(echo $coverage_files | tr '\n' ' ')" >> $GITHUB_ENV
+          echo "COVERAGE_FILES=$(echo $coverage_files | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: report coverage to coveralls
         if: steps.repo-visibility.outputs.continue-coveralls == 'true'
