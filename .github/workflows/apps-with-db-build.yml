@@ -51,12 +51,32 @@ jobs:
         run: yarn test
         env:
           PG_COMPONENT_PSQL_CONNECTION_STRING: postgres://postgres:pass1234@localhost/db
+      - name: determine repository visibility
+        id: repo-visibility
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }})
+          
+          IS_PRIVATE=$(echo "$RESPONSE" | jq -r '.private')
+          
+          if [ "$IS_PRIVATE" = "true" ]; then
+            echo "continue-coveralls=false" >> $GITHUB_ENV
+          else
+            echo "continue-coveralls=true" >> $GITHUB_ENV
+          fi
+          echo "::set-output name=continue-coveralls::$(echo $IS_PRIVATE | jq -r '.private')"
+  
       - name: find coverage files in any workspace or root
+        if: steps.repo-visibility.outputs.continue-coveralls == 'true'
         run: |
           coverage_files=$(find ./ -type f -name 'lcov.info' -not -path '*/node_modules/*')
           echo "COVERAGE_FILES=$(echo $coverage_files | tr '\n' ' ')" >> $GITHUB_ENV
 
       - name: report coverage to coveralls
+        if: steps.repo-visibility.outputs.continue-coveralls == 'true'
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
