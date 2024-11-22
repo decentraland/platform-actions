@@ -35,8 +35,29 @@ jobs:
         run: yarn build
       - name: test
         run: yarn test --coverage
+      - name: determine repository visibility
+        id: repo-visibility
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }})
+          
+          IS_PRIVATE=$(echo "$RESPONSE" | jq -r '.private')
+          
+          if [ "$IS_PRIVATE" = "true" ]; then
+            echo "continue-coveralls=false" >> $GITHUB_ENV
+          else
+            echo "continue-coveralls=true" >> $GITHUB_ENV
+          fi
+          echo "::set-output name=continue-coveralls::$(echo $IS_PRIVATE | jq -r '.private')"
+
       - name: report coverage
+        if: steps.repo-visibility.outputs.continue-coveralls == 'true'
         uses: coverallsapp/github-action@master
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}          
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: ./coverage/lcov.info
+
+          
