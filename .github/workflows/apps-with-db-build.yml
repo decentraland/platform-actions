@@ -60,14 +60,14 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository }})
           
-          IS_PRIVATE=$(echo "$RESPONSE" | jq -r '.private')
+          IS_PRIVATE=$(echo "$RESPONSE" | jq -r '.visibility')
           
           if [ "$IS_PRIVATE" = "true" ]; then
             echo "continue-coveralls=false" >> $GITHUB_ENV
           else
             echo "continue-coveralls=true" >> $GITHUB_ENV
           fi
-          echo "::set-output name=continue-coveralls::$(echo $IS_PRIVATE | jq -r '.private')"
+          echo "::set-output name=continue-coveralls::$(echo $IS_PRIVATE | jq -r '.visibility')"
   
       - name: find coverage files in any workspace or root
         if: steps.repo-visibility.outputs.continue-coveralls == 'true'
