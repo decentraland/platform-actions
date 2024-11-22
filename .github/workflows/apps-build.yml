@@ -35,7 +35,7 @@ jobs:
         run: yarn build
       - name: test
         run: yarn test --coverage
-      - name: determine repository visibility
+      - name: hide coveralls if repo is private
         id: repo-visibility
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
