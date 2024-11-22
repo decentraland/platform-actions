@@ -69,7 +69,7 @@ jobs:
           fi
 
           # Set environment variable for coveralls
-          if [ "$IS_PRIVATE" = "true" ]; then
+          if [ "$IS_PRIVATE" = true ]; then
               echo "continue-coveralls=false" >> $GITHUB_ENV
           else
               echo "continue-coveralls=true" >> $GITHUB_ENV
