@@ -5,6 +5,14 @@ on:
         required: false
         type: boolean
         default: false
+      custom-tag:
+        required: false
+        type: string
+        description: "Custom npm tag to use for publishing (e.g. pr-123)"
+      branch-to-custom-tag:
+        required: false
+        type: string
+        description: "Branch name that should use the custom tag"
     secrets:
       SDK_TEAM_S3_BASE_URL:
         required: true
@@ -50,13 +58,17 @@ jobs:
         if: ${{ inputs.run-pre-publish }}
         run: yarn pre-publish
       - name: publish packages
-        uses: menduz/oddish-action@master
+        uses: decentraland/oddish-action@master
         id: publish_package
         with:
           registry-url: 'https://registry.npmjs.org'
           access: public
           ## use action runId instead of current date to generate snapshot numbers
           deterministic-snapshot: true
+
+          # custom tags handling
+          custom-tag: ${{ inputs.custom-tag }}
+          branch-to-custom-tag: ${{ inputs.branch-to-custom-tag }}
 
           ## publish every package to s3
           s3-bucket: ${{ secrets.SDK_TEAM_S3_BUCKET }}
