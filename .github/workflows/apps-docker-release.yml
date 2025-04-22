@@ -3,6 +3,10 @@ name: Publish 'latest' image
 on:
   workflow_call:
     inputs:
+      context:
+        required: false
+        type: string
+        default: "."
       service-name:
         required: true
         type: string
@@ -49,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: download Dockerfile
         if: ${{ inputs.dockerfile-url }}
-        run: wget -O Dockerfile ${{ inputs.dockerfile-url }}
+        run: mkdir -p ${{ inputs.context }} && wget -O ${{ inputs.context }}/Dockerfile ${{ inputs.dockerfile-url }}
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
@@ -57,8 +61,9 @@ jobs:
           image: ${{ inputs.image-name || inputs.service-name }}
           layers: ${{ inputs.layers }}
           tags: ${{ github.sha }} latest ${{ github.event.release.tag_name }} ${{ inputs.docker-tag }}
+          context: ${{ inputs.context }}
           dockerfiles: |
-            ./Dockerfile
+            ${{ inputs.context }}/Dockerfile
           build-args: |
             ${{ inputs.build-args }}
             CURRENT_VERSION=${{ github.event.release.tag_name }}
