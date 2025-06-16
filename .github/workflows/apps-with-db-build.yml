@@ -2,16 +2,22 @@ name: build-app-with-db
 
 on:
   workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '18.x'
+        description: 'Node.js version to use'
 
 jobs:
   validations:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 18.x
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: ${{ inputs.node-version }}
           cache: yarn
       - name: install
         run: yarn install --frozen-lockfile
@@ -36,10 +42,10 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 18.x
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: ${{ inputs.node-version }}
           cache: yarn
       - name: install
         run: yarn install --frozen-lockfile
