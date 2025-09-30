@@ -3,14 +3,22 @@ name: Build and deploy app docs
 on:
   workflow_call:
     inputs:
-      path-to-docs:
+      api-spec-file:
         required: true
         type: string
+        description: "Path to the OpenAPI specification file"
 
-      path-to-output:
+      output-file:
         required: false
         type: string
-        default: "docs/index.html"
+        default: "./docs/index.html"
+        description: "Path where the generated HTML documentation will be saved"
+
+      output-directory:
+        required: false
+        type: string
+        default: "./docs"
+        description: "Directory to upload as GitHub Pages artifact"
 
       node-version:
         required: false
@@ -36,16 +44,16 @@ jobs:
         run: yarn add -D @redocly/cli
 
       - name: Validate OpenAPI specification
-        run: yarn redocly lint ${{ inputs.path-to-docs }}
+        run: yarn redocly lint ${{ inputs.api-spec-file }}
 
       - name: Build documentation
-        run: yarn redocly build-docs ${{ inputs.path-to-docs }} -o ${{ inputs.path-to-output }}
+        run: yarn redocly build-docs ${{ inputs.api-spec-file }} -o ${{ inputs.output-file }}
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: $(dirname ${{ inputs.path-to-output }})
+          path: ${{ inputs.output-directory }}
 
   deploy:
     needs: build
