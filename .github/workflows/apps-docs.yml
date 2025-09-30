@@ -3,14 +3,14 @@ name: Build and deploy app docs
 on:
   workflow_call:
     inputs:
-      path-to-docs:
+      path-to-api-spec:
         required: true
         type: string
 
-      path-to-output:
+      path-to-docs:
         required: false
         type: string
-        default: "docs/index.html"
+        default: "./docs"
 
       node-version:
         required: false
@@ -36,16 +36,16 @@ jobs:
         run: yarn add -D @redocly/cli
 
       - name: Validate OpenAPI specification
-        run: yarn redocly lint ${{ inputs.path-to-docs }}
+        run: yarn redocly lint ${{ inputs.path-to-api-spec }}
 
       - name: Build documentation
-        run: yarn redocly build-docs ${{ inputs.path-to-docs }} -o ${{ inputs.path-to-output }}
+        run: yarn redocly build-docs ${{ inputs.path-to-api-spec }} -o ${{ inputs.path-to-docs }}
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: $(dirname ${{ inputs.path-to-output }})
+          path: $(dirname ${{ inputs.path-to-docs }})
 
   deploy:
     needs: build
