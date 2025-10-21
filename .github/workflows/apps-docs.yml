@@ -46,8 +46,11 @@ jobs:
       - name: Validate OpenAPI specification
         run: yarn redocly lint ${{ inputs.api-spec-file }}
 
+      - name: Bundle OpenAPI specification
+        run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ./docs/api-reference.yaml --ext yaml --dereferenced
+
       - name: Build documentation
-        run: yarn redocly build-docs ${{ inputs.api-spec-file }} -o ${{ inputs.output-file }}
+        run: yarn redocly build-docs ./docs/api-reference.yaml -o ${{ inputs.output-file }}
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
