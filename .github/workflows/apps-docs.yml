@@ -14,6 +14,12 @@ on:
         default: "./docs/index.html"
         description: "Path where the generated HTML documentation will be saved"
 
+      output-bundle-file:
+        required: false
+        type: string
+        default: "./docs/api-reference.yaml"
+        description: "Path where the bundled OpenAPI specification will be saved"
+
       output-directory:
         required: false
         type: string
@@ -46,8 +52,11 @@ jobs:
       - name: Validate OpenAPI specification
         run: yarn redocly lint ${{ inputs.api-spec-file }}
 
+      - name: Bundle OpenAPI specification
+        run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
+
       - name: Build documentation
-        run: yarn redocly build-docs ${{ inputs.api-spec-file }} -o ${{ inputs.output-file }}
+        run: yarn redocly build-docs ${{ inputs.output-bundle-file }} -o ${{ inputs.output-file }}
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
