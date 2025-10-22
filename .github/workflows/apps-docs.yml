@@ -88,6 +88,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
+      GITBOOK_ORGANIZATION_ID: ${{ vars.GITBOOK_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -95,16 +98,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
 
       - name: Install GitBook CLI
-        run: yarn add -D @gitbook/cli
+        run: yarn global add @gitbook/cli
 
       - name: Publish to GitBook
         run: |
-          yarn gitbook openapi publish --spec ${{ inputs.api-spec-name }} --organization ${{ secrets.GITBOOK_ORG_ID }} ${{ inputs.output-bundle-file }}
-        env:
-          GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
+          gitbook openapi publish \
+            --spec "${{ inputs.api-spec-name }}" \
+            --organization "$GITBOOK_ORGANIZATION_ID" \
+            "${{ inputs.output-bundle-file }}"
