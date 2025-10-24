@@ -16,14 +16,10 @@ on:
       output-bundle-file:
         required: false
         type: string
-        default: "./docs/api-reference.yaml"
+        default: "docs/api-reference.yaml"
         description: "Path where the bundled OpenAPI specification will be saved"
 
-      output-directory:
-        required: false
-        type: string
-        default: "./docs"
-        description: "Directory to upload as GitHub Pages artifact"
+    
 
       node-version:
         required: false
@@ -31,8 +27,11 @@ on:
         default: "20"
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
+    env:
+      GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
+      GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,33 +53,12 @@ jobs:
       - name: Bundle OpenAPI specification
         run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
 
-      - name: Upload Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ inputs.output-directory }}
-
-  publish-gitbook:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ inputs.node-version }}
-
       - name: Install GitBook CLI
         run: yarn global add @gitbook/cli
-
-      - name: Authenticate with GitBook
-        run: gitbook auth --token=${{ secrets.GITBOOK_TOKEN }}
 
       - name: Publish to GitBook
         run: |
           gitbook openapi publish \
             --spec "${{ inputs.api-spec-name }}" \
-            --organization ${{ secrets.GITBOOK_ORGANIZATION_ID }} \
+            --organization "$GITBOOK_ORGANIZATION_ID" \
             "${{ inputs.output-bundle-file }}"
