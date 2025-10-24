@@ -54,6 +54,12 @@ jobs:
       - name: Bundle OpenAPI specification
         run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
 
+      - name: Upload bundled spec as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundled-api-spec
+          path: ${{ inputs.output-bundle-file }}
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -67,6 +73,12 @@ jobs:
       GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download bundled spec
+        uses: actions/download-artifact@v4
+        with:
+          name: bundled-api-spec
+          path: ${{ inputs.output-bundle-file }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
