@@ -78,6 +78,9 @@ jobs:
       - name: Install GitBook CLI
         run: yarn global add @gitbook/cli
 
+      - name: Authenticate with GitBook
+        run: gitbook auth --token "$GITBOOK_TOKEN"
+
       - name: Publish to GitBook
         run: |
           gitbook openapi publish \
