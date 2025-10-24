@@ -60,10 +60,6 @@ jobs:
           name: bundled-api-spec
           path: ${{ inputs.output-bundle-file }}
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ inputs.output-directory }}
 
   publish-gitbook:
     needs: build
