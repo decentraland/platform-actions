@@ -55,7 +55,6 @@ jobs:
         run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
 
       - name: Upload Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ inputs.output-directory }}
@@ -63,7 +62,6 @@ jobs:
   publish-gitbook:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
       GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
