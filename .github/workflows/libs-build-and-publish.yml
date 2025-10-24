@@ -13,6 +13,17 @@ on:
         required: false
         type: string
         description: "Branch name that should use the custom tag"
+
+      node-version:
+        required: false
+        type: string
+        default: '18.x'
+        description: 'Node.js version to use'
+
+      node-version-file:
+        required: false
+        type: string
+        description: "Path to the file containing the Node.js version to use (e.g., .nvmrc, .node-version)"
     secrets:
       SDK_TEAM_S3_BASE_URL:
         required: true
@@ -41,6 +52,12 @@ jobs:
       s3_bucket_key: ${{ steps.publish_package.outputs.s3-bucket-key }}
     steps:
       - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version-file == '' && inputs.node-version || '' }}
+          node-version-file: ${{ inputs.node-version-file }}
+          cache: yarn
       - name: install
         run: yarn install --frozen-lockfile
       - name: build

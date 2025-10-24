@@ -2,16 +2,28 @@ name: build-app
 
 on:
   workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '18.x'
+        description: 'Node.js version to use'
+
+      node-version-file:
+        required: false
+        type: string
+        description: "Path to the file containing the Node.js version to use (e.g., .nvmrc, .node-version)"
 
 jobs:
   validations:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 18.x
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: ${{ inputs.node-version-file == '' && inputs.node-version || '' }}
+          node-version-file: ${{ inputs.node-version-file }}
           cache: yarn
       - name: install
         run: yarn install --frozen-lockfile
@@ -22,10 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 18.x
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: ${{ inputs.node-version-file == '' && inputs.node-version || '' }}
+          node-version-file: ${{ inputs.node-version-file }}
           cache: yarn
       - name: install
         run: yarn install --frozen-lockfile
