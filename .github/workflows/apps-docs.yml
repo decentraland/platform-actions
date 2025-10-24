@@ -16,14 +16,10 @@ on:
       output-bundle-file:
         required: false
         type: string
-        default: "./docs/api-reference.yaml"
+        default: "docs/api-reference.yaml"
         description: "Path where the bundled OpenAPI specification will be saved"
 
-      output-directory:
-        required: false
-        type: string
-        default: "./docs"
-        description: "Directory to upload as GitHub Pages artifact"
+    
 
       node-version:
         required: false
@@ -31,8 +27,11 @@ on:
         default: "20"
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
+    env:
+      GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
+      GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,33 +52,6 @@ jobs:
 
       - name: Bundle OpenAPI specification
         run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
-
-      - name: Upload bundled spec as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: bundled-api-spec
-          path: ${{ inputs.output-bundle-file }}
-
-
-  publish-gitbook:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
-      GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download bundled spec
-        uses: actions/download-artifact@v4
-        with:
-          name: bundled-api-spec
-          path: ${{ inputs.output-bundle-file }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ inputs.node-version }}
 
       - name: Install GitBook CLI
         run: yarn global add @gitbook/cli
