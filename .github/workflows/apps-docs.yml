@@ -19,12 +19,16 @@ on:
         default: "docs/api-reference.yaml"
         description: "Path where the bundled OpenAPI specification will be saved"
 
-    
-
       node-version:
         required: false
         type: string
-        default: "20"
+        default: "18.x"
+        description: "Node.js version to use"
+
+      node-version-file:
+        required: false
+        type: string
+        description: "Path to the file containing the Node.js version to use (e.g., .nvmrc, .node-version)"
 
 jobs:
   build-and-publish:
@@ -39,7 +43,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ inputs.node-version }}
+          node-version: ${{ inputs.node-version-file == '' && inputs.node-version || '' }}
+          node-version-file: ${{ inputs.node-version-file }}
           cache: "yarn"
 
       - name: Install dependencies
@@ -62,3 +67,4 @@ jobs:
             --spec "${{ inputs.api-spec-name }}" \
             --organization "$GITBOOK_ORGANIZATION_ID" \
             "${{ inputs.output-bundle-file }}"
+
