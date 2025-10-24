@@ -52,7 +52,7 @@ jobs:
         run: yarn redocly lint ${{ inputs.api-spec-file }}
 
       - name: Bundle OpenAPI specification
-        run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereference
+        run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
