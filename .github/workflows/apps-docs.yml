@@ -29,6 +29,7 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
       GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
@@ -55,7 +56,6 @@ jobs:
 
       - name: Install GitBook CLI
         run: yarn global add @gitbook/cli
-
       - name: Publish to GitBook
         run: |
           gitbook openapi publish \
