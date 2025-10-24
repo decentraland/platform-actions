@@ -63,7 +63,6 @@ jobs:
   publish-gitbook:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -76,11 +75,15 @@ jobs:
         run: yarn global add @gitbook/cli
 
       - name: Authenticate with GitBook
-        run: gitbook auth --token=${{ secrets.GITBOOK_TOKEN }}
+        env:
+          GITBOOK_TOKEN: ${{ secrets.GITBOOK_TOKEN }}
+        run: gitbook auth --token="$GITBOOK_TOKEN"
 
       - name: Publish to GitBook
+        env:
+          GITBOOK_ORGANIZATION_ID: ${{ secrets.GITBOOK_ORGANIZATION_ID }}
         run: |
           gitbook openapi publish \
             --spec "${{ inputs.api-spec-name }}" \
-            --organization ${{ secrets.GITBOOK_ORGANIZATION_ID }} \
+            --organization "$GITBOOK_ORGANIZATION_ID" \
             "${{ inputs.output-bundle-file }}"
