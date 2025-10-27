@@ -45,14 +45,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Install Redocly CLI
-        run: yarn add -D @redocly/cli
-
       - name: Validate OpenAPI specification
-        run: yarn redocly lint ${{ inputs.api-spec-file }}
+        run: npx @redocly/cli@latest lint ${{ inputs.api-spec-file }}
 
       - name: Bundle OpenAPI specification
-        run: yarn redocly bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
+        run: npx @redocly/cli@latest bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
 
       - name: Install GitBook CLI
         run: yarn global add @gitbook/cli
