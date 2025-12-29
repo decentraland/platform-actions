@@ -19,8 +19,6 @@ on:
         default: "docs/api-reference.yaml"
         description: "Path where the bundled OpenAPI specification will be saved"
 
-    
-
       node-version:
         required: false
         type: string
@@ -36,14 +34,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Detect package manager (lockfile)
+        id: detect-package-manager
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "pm=yarn" >> "$GITHUB_OUTPUT"
+          elif [ -f package-lock.json ]; then
+            echo "pm=npm" >> "$GITHUB_OUTPUT"
+          else
+            echo "No lockfile found (package-lock.json or yarn.lock)" >&2
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "yarn"
+          cache: ${{ steps.detect-package-manager.outputs.pm }}
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          if [ "${{ steps.detect-package-manager.outputs.pm }}" = "npm" ]; then
+            npm ci
+          else
+            yarn install --frozen-lockfile
+          fi
 
       - name: Validate OpenAPI specification
         run: npx @redocly/cli@latest lint ${{ inputs.api-spec-file }}
@@ -52,7 +67,13 @@ jobs:
         run: npx @redocly/cli@latest bundle ${{ inputs.api-spec-file }} --output ${{ inputs.output-bundle-file }} --ext yaml --dereferenced
 
       - name: Install GitBook CLI
-        run: yarn global add @gitbook/cli
+        run: |
+          if [ "${{ steps.detect-package-manager.outputs.pm }}" = "npm" ]; then
+            npm install -g @gitbook/cli
+          else
+            yarn global add @gitbook/cli
+          fi
+
       - name: Publish to GitBook
         run: |
           gitbook openapi publish \
