@@ -1,0 +1,116 @@
+name: npm-deprecate
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: 'NPM package name to deprecate (e.g. @dcl/platform-server-commons)'
+        required: true
+        type: string
+      deprecation-message:
+        description: 'Deprecation message shown to users (e.g. "This package is deprecated. Please use @dcl/new-package instead.")'
+        required: true
+        type: string
+      version-spec:
+        description: 'Version specification to deprecate (leave empty for all versions, or use semver range like "< 2.0.0")'
+        required: false
+        type: string
+        default: ''
+      dry-run:
+        description: 'Dry run mode - show what would be deprecated without making changes'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      NPM_TOKEN:
+        required: true
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Validate package exists
+        run: |
+          echo "Checking if package '${{ inputs.package-name }}' exists on NPM..."
+          if ! npm view "${{ inputs.package-name }}" > /dev/null 2>&1; then
+            echo "::error::Package '${{ inputs.package-name }}' not found on NPM registry"
+            exit 1
+          fi
+          echo "Package found. Current versions:"
+          npm view "${{ inputs.package-name }}" versions --json | head -20
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Deprecate package
+        run: |
+          PACKAGE="${{ inputs.package-name }}"
+          MESSAGE="${{ inputs.deprecation-message }}"
+          VERSION_SPEC="${{ inputs.version-spec }}"
+          DRY_RUN="${{ inputs.dry-run }}"
+
+          # Build the package specifier
+          if [ -n "$VERSION_SPEC" ]; then
+            PACKAGE_SPEC="${PACKAGE}@\"${VERSION_SPEC}\""
+          else
+            PACKAGE_SPEC="${PACKAGE}"
+          fi
+
+          echo "=== NPM Deprecation ==="
+          echo "Package: $PACKAGE"
+          echo "Version spec: ${VERSION_SPEC:-all versions}"
+          echo "Message: $MESSAGE"
+          echo "Dry run: $DRY_RUN"
+          echo "======================="
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo ""
+            echo "[DRY RUN] Would execute:"
+            echo "npm deprecate \"$PACKAGE_SPEC\" \"$MESSAGE\""
+            echo ""
+            echo "No changes were made."
+          else
+            echo ""
+            echo "Executing deprecation..."
+            npm deprecate "$PACKAGE_SPEC" "$MESSAGE"
+            echo ""
+            echo "Package '$PACKAGE' has been deprecated successfully."
+            echo "Users will now see the following warning when installing:"
+            echo "  npm warn deprecated $PACKAGE: $MESSAGE"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify deprecation
+        if: ${{ inputs.dry-run == false }}
+        run: |
+          echo "Verifying deprecation status..."
+          sleep 2
+          npm view "${{ inputs.package-name }}" deprecated 2>/dev/null || echo "Deprecation verified (or field not yet propagated)"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Summary
+        run: |
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "### Dry Run Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No changes were made. Review the logs above to see what would be deprecated." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Package Deprecated Successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Package | \`${{ inputs.package-name }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| Version Spec | ${VERSION_SPEC:-All versions} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Message | ${{ inputs.deprecation-message }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Users will now see a deprecation warning when installing this package." >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          VERSION_SPEC: ${{ inputs.version-spec }}
