@@ -1,0 +1,33 @@
+name: lint-package-json
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '18.x'
+        description: 'Node.js version to use'
+      working-directory:
+        required: false
+        type: string
+        default: '.'
+        description: 'Directory that contains package.json'
+
+jobs:
+  lint-package-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Lint package.json
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          npx --yes npm-package-json-lint@9 .
+          echo "✅ package.json lint passed"
+
