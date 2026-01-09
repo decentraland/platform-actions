@@ -122,7 +122,7 @@ jobs:
     uses: decentraland/platform-actions/.github/workflows/lint-package-json.yml@main
 ```
 
-No secrets required. If the repository does not provide a `.npmpackagejsonlintrc(.json)` file, this workflow creates a default config.
+No secrets required.
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
