@@ -105,6 +105,32 @@ jobs:
 
 ---
 
+### Shared
+
+#### `lint-package-json.yml`
+
+Lint `package.json` using `npm-package-json-lint`.
+
+```yaml
+# .github/workflows/lint-package-json.yml
+name: lint package.json
+
+on: [push]
+
+jobs:
+  lint-pkg:
+    uses: decentraland/platform-actions/.github/workflows/lint-package-json.yml@main
+```
+
+No secrets required.
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `node-version` | No | `18.x` | Node.js version to use |
+| `working-directory` | No | `.` | Directory that contains `package.json` |
+
+---
+
 ### Applications
 
 #### `apps-build.yml`
