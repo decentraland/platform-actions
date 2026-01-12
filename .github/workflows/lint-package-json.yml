@@ -1,0 +1,62 @@
+name: lint-package-json
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '18.x'
+        description: 'Node.js version to use'
+      working-directory:
+        required: false
+        type: string
+        default: '.'
+        description: 'Directory that contains package.json'
+
+jobs:
+  lint-package-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Check npm-package-json-lint config exists
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          CONFIG_FILES=(".npmpackagejsonlintrc.json" "npmpackagejsonlint.config.js" ".npmpackagejsonlintrc")
+          
+          # Check standalone config files
+          for file in "${CONFIG_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ Found $file"
+              exit 0
+            fi
+          done
+          
+          # Check package.json for inline config
+          if [ -f "package.json" ] && grep -q '"npmpackagejsonlint"' package.json; then
+            echo "✅ Found npmpackagejsonlint config in package.json"
+            exit 0
+          fi
+          
+          echo "❌ Missing npm-package-json-lint configuration"
+          echo ""
+          echo "Please add one of the following:"
+          echo "  - .npmpackagejsonlintrc.json"
+          echo "  - npmpackagejsonlint.config.js"
+          echo "  - npmpackagejsonlint property in package.json"
+          echo ""
+          echo "See: https://npmpackagejsonlint.org/docs/configuration"
+          exit 1
+
+      - name: Lint package.json
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          npx --yes npm-package-json-lint@9 .
+          echo "✅ package.json lint passed"
+
