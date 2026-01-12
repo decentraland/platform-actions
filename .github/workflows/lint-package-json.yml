@@ -54,9 +54,13 @@ jobs:
           echo "See: https://npmpackagejsonlint.org/docs/configuration"
           exit 1
 
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
       - name: Lint package.json
         working-directory: ${{ inputs.working-directory }}
         run: |
-          npx --yes npm-package-json-lint@9 .
+          npx npm-package-json-lint .
           echo "✅ package.json lint passed"
 
