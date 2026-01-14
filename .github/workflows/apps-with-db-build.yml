@@ -6,8 +6,8 @@ on:
       node-version:
         required: false
         type: string
-        default: '18.x'
-        description: 'Node.js version to use'
+        default: "18.x"
+        description: "Node.js version to use"
 
 jobs:
   validations:
@@ -81,7 +81,7 @@ jobs:
           else
               echo "continue-coveralls=true" >> $GITHUB_OUTPUT
           fi
-  
+
       - name: find coverage files in any workspace or root
         if: steps.repo-visibility.outputs.continue-coveralls == 'true'
         run: |
