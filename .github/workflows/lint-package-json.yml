@@ -61,6 +61,6 @@ jobs:
       - name: Lint package.json
         working-directory: ${{ inputs.working-directory }}
         run: |
-          npx npm-package-json-lint .
+          npx npm-package-json-lint . --maxWarnings 0
           echo "✅ package.json lint passed"
 
