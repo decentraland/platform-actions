@@ -1,0 +1,12 @@
+name: Sync release version to package.json (yarn)
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  sync-version:
+    uses: decentraland/platform-actions/.github/workflows/sync-release-version.yml@main
