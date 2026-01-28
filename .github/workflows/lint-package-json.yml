@@ -14,6 +14,9 @@ on:
         default: '.'
         description: 'Directory that contains package.json'
 
+permissions:
+  contents: read
+
 jobs:
   lint-package-json:
     runs-on: ubuntu-latest
