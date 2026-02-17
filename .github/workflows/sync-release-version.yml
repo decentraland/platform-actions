@@ -67,5 +67,5 @@ jobs:
           fi
 
           git add package.json package-lock.json yarn.lock 2>/dev/null || true
-          git commit -m "chore(release): bump version to ${{ steps.ver.outputs.version }}"
+          git commit -m "chore: bump version to ${{ steps.ver.outputs.version }}"
           git push
