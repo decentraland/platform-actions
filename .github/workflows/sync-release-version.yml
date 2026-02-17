@@ -1,0 +1,71 @@
+name: Sync release version to package.json (npm/yarn)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+          elif [ -f package-lock.json ]; then
+            echo "manager=npm" >> $GITHUB_OUTPUT
+          else
+            echo "No yarn.lock or package-lock.json found. Defaulting to npm."
+            echo "manager=npm" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump version (Yarn)
+        if: steps.pm.outputs.manager == 'yarn'
+        run: |
+          corepack enable
+          yarn --version
+          yarn version --new-version "${{ steps.ver.outputs.version }}" --no-git-tag-version
+          yarn install --mode=skip-build || yarn install
+
+      - name: Bump version (npm)
+        if: steps.pm.outputs.manager == 'npm'
+        run: |
+          npm --version
+          npm version "${{ steps.ver.outputs.version }}" --no-git-tag-version
+          npm install --package-lock-only
+
+      - name: Commit & push
+        run: |
+          git config user.name "core-developers"
+          git config user.email "core-developers@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git add package.json package-lock.json yarn.lock 2>/dev/null || true
+          git commit -m "chore: bump version to ${{ steps.ver.outputs.version }}"
+          git push
