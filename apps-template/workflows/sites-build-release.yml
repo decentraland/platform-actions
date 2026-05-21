@@ -29,6 +29,10 @@ on:
 
 jobs:
   build-release:
+    # TODO: Repin to `@v1` (or the latest tagged release) once this reusable
+    # workflow is stable and tagged. `@main` is fine for the initial rollout
+    # but is a moving target and shouldn't be used in steady-state production
+    # consumers — every site would silently pick up upstream changes.
     uses: decentraland/platform-actions/.github/workflows/sites-build-release.yml@main
     permissions:
       id-token: write

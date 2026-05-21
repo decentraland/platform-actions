@@ -88,7 +88,7 @@ jobs:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # @v4.3.0
 
       - name: Use Node.js ${{ inputs.node-version }}
-        uses: actions/setup-node@v4.0.1
+        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: ${{ inputs.node-version }}
           cache: 'npm'
@@ -98,18 +98,28 @@ jobs:
         # Releases use the git tag as-is. Branch pushes / workflow_dispatch use
         # <package_base>-<run_id>.commit-<sha7>. Same shape as the prior oddish
         # snapshot version so existing rollout consumers keep working.
+        #
+        # Attacker-controllable values (tag_name in particular) are passed as
+        # env vars rather than `${{ }}` interpolation so they reach the shell
+        # as data, not code. Tags can contain shell metacharacters; injection
+        # here would run with `id-token: write` available, i.e. the runner
+        # could exchange the OIDC token for AWS credentials.
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           PKG_NAME=$(node -p "require('./package.json').name.replace('@dcl/', '')")
-          if [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
+          if [ "$EVENT_NAME" = "release" ]; then
+            VERSION="$TAG_NAME"
           else
             BASE=$(node -p "require('./package.json').version" | sed 's/-development$//')
-            VERSION="${BASE}-${{ github.run_id }}.commit-${GITHUB_SHA:0:7}"
+            VERSION="${BASE}-${RUN_ID}.commit-${GITHUB_SHA:0:7}"
           fi
-          echo "package_name=$PKG_NAME"      >> $GITHUB_OUTPUT
-          echo "version=$VERSION"             >> $GITHUB_OUTPUT
-          echo "s3_prefix=$PKG_NAME/$VERSION" >> $GITHUB_OUTPUT
+          echo "package_name=$PKG_NAME"      >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"             >> "$GITHUB_OUTPUT"
+          echo "s3_prefix=$PKG_NAME/$VERSION" >> "$GITHUB_OUTPUT"
           echo "Deploying $PKG_NAME@$VERSION"
 
       - name: Install
@@ -130,15 +140,25 @@ jobs:
       - name: Sync static assets to S3
         # Long cache for hashed assets (immutable filenames), short / no-cache
         # for HTML so new deploys roll out without stale shells.
+        #
+        # Inputs are env-mapped (not `${{ }}` interpolated into the shell) so
+        # that a caller passing a malicious value can't escape into command
+        # context while AWS credentials are active. Defense in depth: callers
+        # are trusted code today, but the blast radius of an injection here
+        # is full S3 write access.
         working-directory: ${{ inputs.working-directory }}
+        env:
+          DIST_DIR: ${{ inputs.dist-dir }}
+          S3_BUCKET: ${{ inputs.aws-bucket }}
+          S3_PREFIX: ${{ steps.version.outputs.s3_prefix }}
         run: |
-          aws s3 sync ./${{ inputs.dist-dir }} \
-            "s3://${{ inputs.aws-bucket }}/${{ steps.version.outputs.s3_prefix }}/" \
+          aws s3 sync "./$DIST_DIR" \
+            "s3://$S3_BUCKET/$S3_PREFIX/" \
             --delete \
             --exclude "*.html" \
             --cache-control "public, max-age=31536000, immutable"
-          aws s3 sync ./${{ inputs.dist-dir }} \
-            "s3://${{ inputs.aws-bucket }}/${{ steps.version.outputs.s3_prefix }}/" \
+          aws s3 sync "./$DIST_DIR" \
+            "s3://$S3_BUCKET/$S3_PREFIX/" \
             --exclude "*" \
             --include "*.html" \
             --cache-control "public, max-age=0, must-revalidate"
@@ -153,7 +173,7 @@ jobs:
       contents: read
     steps:
       - name: Set rollout (zone)
-        uses: decentraland/set-rollout-action@v2
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
@@ -174,7 +194,7 @@ jobs:
       contents: read
     steps:
       - name: Set rollout (today)
-        uses: decentraland/set-rollout-action@v2
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
@@ -197,7 +217,7 @@ jobs:
       contents: read
     steps:
       - name: Set rollout (org)
-        uses: decentraland/set-rollout-action@v2
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
@@ -220,7 +240,7 @@ jobs:
       contents: read
     steps:
       - name: Set rollout (manual)
-        uses: decentraland/set-rollout-action@v2
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref }}
