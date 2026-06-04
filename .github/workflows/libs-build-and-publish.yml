@@ -58,7 +58,7 @@ jobs:
         if: ${{ inputs.run-pre-publish }}
         run: yarn pre-publish
       - name: publish packages
-        uses: decentraland/oddish-action@master
+        uses: decentraland/oddish-action@0074f2d535c43b5c83f136525304a6277166d77f # @master
         id: publish_package
         with:
           registry-url: 'https://registry.npmjs.org'
