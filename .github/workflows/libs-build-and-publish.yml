@@ -25,7 +25,7 @@ on:
       GITLAB_URL:
         required: true
       NPM_TOKEN:
-        required: true
+        required: false
       SDK_TEAM_AWS_ID:
         required: true
       SDK_TEAM_AWS_SECRET:
