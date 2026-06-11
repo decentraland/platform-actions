@@ -34,9 +34,14 @@ jobs:
         env:
           REGISTRY_PATH: ${{ inputs.quay-registry-path }}
         run: |
+          # Block latest/next in any form, including digest-pinned (…:latest@sha256:…). A digest pin
+          # guarantees content but NOT persistence: once the latest/next tag moves off that digest and
+          # no retained tag remains, Quay GC reaps it and prd fails to pull on the next task placement
+          # (CannotPullContainerError) — this is the exact failure mode of the original incident. Only a
+          # retained immutable version tag keeps the digest alive, so prd must use one.
           case "$REGISTRY_PATH" in
             *:latest|*:next|*:latest@*|*:next@*)
-              echo "::error::Refusing to deploy a mutable tag (latest/next) to prd. Pin an immutable version tag or a digest."
+              echo "::error::Refusing to deploy a mutable tag (latest/next) to prd. Pin an immutable version tag."
               exit 1 ;;
           esac
       - name: Trigger deployment
