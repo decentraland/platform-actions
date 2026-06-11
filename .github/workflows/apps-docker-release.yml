@@ -1,4 +1,4 @@
-name: Publish 'latest' image
+name: Build, publish & deploy release image
 
 on:
   workflow_call:
