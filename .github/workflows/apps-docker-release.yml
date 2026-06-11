@@ -56,7 +56,19 @@ jobs:
         with:
           image: ${{ inputs.image-name || inputs.service-name }}
           layers: ${{ inputs.layers }}
-          tags: ${{ github.sha }} latest ${{ github.event.release.tag_name }} ${{ inputs.docker-tag }}
+          # Do NOT tag this rebuilt release image with ${{ github.sha }}. The next pipeline
+          # already published this commit under its SHA tag, and dev/biz deployments are pinned
+          # by digest to that next-built image. Re-tagging the SHA onto this (separately built)
+          # release digest moves the tag off the next-built digest, which then goes untagged ->
+          # Quay GC reaps it -> running tasks pinned to it fail with CannotPullContainerError.
+          # Release publishes version + latest only; the SHA tag stays on the next build.
+          #
+          # Order matters: the deploy job below pins the image by `registry-path`, which is the
+          # FIRST tag in this list, so it must be non-empty and prefer an immutable reference.
+          # On a release event: tag "<version> latest" (immutable version first).
+          # Off a release event (release.tag_name empty, e.g. MetaForge on push): tag just
+          # docker-tag (default "latest") so the first tag is valid and not duplicated.
+          tags: ${{ github.event.release.tag_name && format('{0} latest', github.event.release.tag_name) || inputs.docker-tag }}
           dockerfiles: |
             ./Dockerfile
           build-args: |

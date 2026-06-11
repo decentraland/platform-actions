@@ -26,6 +26,19 @@ jobs:
     name: "Deploy to: ${{ inputs.deployment-environment }}"
     runs-on: ubuntu-latest
     steps:
+      # prd must run an immutable reference (a version tag or a digest). A mutable tag like
+      # latest/next can be repointed, or its digest GC'd out from under a running task, which
+      # is how dev broke (CannotPullContainerError). Block mutable tags on prd.
+      - name: Block mutable tags on prd
+        if: ${{ inputs.deployment-environment == 'prd' }}
+        env:
+          REGISTRY_PATH: ${{ inputs.quay-registry-path }}
+        run: |
+          case "$REGISTRY_PATH" in
+            *:latest|*:next|*:latest@*|*:next@*)
+              echo "::error::Refusing to deploy a mutable tag (latest/next) to prd. Pin an immutable version tag or a digest."
+              exit 1 ;;
+          esac
       - name: Trigger deployment
         id: deploy
         uses: decentraland/dcl-deploy-action@main

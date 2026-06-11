@@ -40,7 +40,19 @@ on:
         value: ${{ jobs.quay-build-push.registry-paths }}
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      # The next pipeline builds every push to main (unreviewed/untagged). It must never
+      # deploy to prd; prd is reached only through a GitHub release (apps-docker-release).
+      - name: Block prd from the next pipeline
+        if: ${{ inputs.deployment-environment == 'prd' }}
+        run: |
+          echo "::error::The 'next' pipeline must not deploy to prd. Cut a GitHub release (apps-docker-release) for prd."
+          exit 1
+
   quay-build-push:
+    needs: [guard]
     runs-on: ubuntu-latest
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
