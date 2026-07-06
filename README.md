@@ -126,7 +126,7 @@ No secrets required.
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `node-version` | No | `18.x` | Node.js version to use |
+| `node-version` | No | `24` | Node.js version to use |
 | `working-directory` | No | `.` | Directory that contains `package.json` |
 
 ---
@@ -172,12 +172,12 @@ jobs:
   build:
     uses: decentraland/platform-actions/.github/workflows/apps-with-db-build.yml@main
     with:
-      node-version: '20.x'
+      node-version: '24'
 ```
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `node-version` | No | `18.x` | Node.js version to use |
+| `node-version` | No | `24` | Node.js version to use |
 
 PostgreSQL connection string is exposed as `PG_COMPONENT_PSQL_CONNECTION_STRING`.
 
@@ -353,7 +353,7 @@ jobs:
 | `api-spec-file` | Yes | - | Path to OpenAPI spec file |
 | `api-spec-name` | Yes | - | API name in GitBook |
 | `output-bundle-file` | No | `docs/api-reference.yaml` | Bundled output path |
-| `node-version` | No | `20` | Node.js version |
+| `node-version` | No | `24` | Node.js version |
 
 Requires `GITBOOK_TOKEN` and `GITBOOK_ORGANIZATION_ID` org secrets.
 
