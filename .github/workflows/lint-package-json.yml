@@ -6,7 +6,7 @@ on:
       node-version:
         required: false
         type: string
-        default: '20.x'
+        default: '24'
         description: 'Node.js version to use'
       working-directory:
         required: false
