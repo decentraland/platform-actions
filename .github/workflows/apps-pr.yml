@@ -40,6 +40,18 @@ jobs:
       - name: download Dockerfile
         if: ${{ inputs.dockerfile-url }}
         run: wget -O Dockerfile ${{ inputs.dockerfile-url }}
+      
+      - name: Cache Buildah layers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/containers
+            /var/lib/containers
+          key: ${{ runner.os }}-buildah-${{ inputs.service-name }}-${{ hashFiles('Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-buildah-${{ inputs.service-name }}-
+            ${{ runner.os }}-buildah-
+      
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
