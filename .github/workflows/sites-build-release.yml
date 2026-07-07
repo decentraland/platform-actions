@@ -1,0 +1,253 @@
+name: sites-build-release
+
+# Reusable workflow for Decentraland sites. Builds the app, uploads the dist/
+# directory to S3 via AWS OIDC (no static keys, no npm publishing), and sets
+# the Cloudflare rollout via set-rollout-action.
+#
+# Replaces the legacy npm-publish + GitLab-CDN-pipeline path. Each consumer
+# repo only declares triggers and inputs; all build/deploy steps live here so
+# changes propagate to every site in a single PR to this repo.
+#
+# Consumers must:
+#   - Provide an IAM role ARN whose trust policy allows their repo
+#     (set repo or org variable AWS_SITES_DEPLOYER_ROLE_ARN).
+#   - Provide the target S3 bucket name (AWS_SITES_BUCKET).
+#   - Configure dist build to output into ./dist (or override via dist-dir).
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: '22.x'
+        description: 'Node.js version'
+      working-directory:
+        type: string
+        default: '.'
+        description: 'Path containing package.json (e.g. ./webapp for monorepos)'
+      install-command:
+        type: string
+        default: 'npm install'
+      build-command:
+        type: string
+        default: 'npm run build'
+      dist-dir:
+        type: string
+        default: 'dist'
+        description: 'Build output directory relative to working-directory'
+      aws-region:
+        type: string
+        default: 'us-east-1'
+      aws-role-arn:
+        type: string
+        required: true
+        description: 'IAM Role ARN to assume via OIDC. Pass `${{ vars.AWS_SITES_DEPLOYER_ROLE_ARN }}` from the caller.'
+      aws-bucket:
+        type: string
+        required: true
+        description: 'Target S3 bucket. Pass `${{ vars.AWS_SITES_BUCKET }}` from the caller.'
+      deployment-path:
+        type: string
+        required: true
+        description: 'Cloudflare KV path key used by the rollout (e.g. marketplace, sites, profile).'
+      deployment-environment:
+        type: string
+        default: ''
+        description: 'Manual env override (zone|today|org). Leave empty for push/release; pass `${{ inputs.deploymentEnvironment }}` for workflow_dispatch.'
+      rollout-percentage:
+        type: string
+        default: '100'
+        description: 'Manual rollout percentage. Leave default for push/release.'
+    outputs:
+      version:
+        description: 'Computed deploy version'
+        value: ${{ jobs.build-release.outputs.version }}
+      package_name:
+        description: 'Package name without @dcl/ prefix'
+        value: ${{ jobs.build-release.outputs.package_name }}
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required for AWS OIDC — STS exchanges this token for short-lived AWS
+      # credentials that authorize the S3 upload, no static keys involved.
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      package_name: ${{ steps.version.outputs.package_name }}
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # @v4.3.0
+
+      - name: Use Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Compute deploy version
+        # Releases use the git tag as-is. Branch pushes / workflow_dispatch use
+        # <package_base>-<run_id>.commit-<sha7>. Same shape as the prior oddish
+        # snapshot version so existing rollout consumers keep working.
+        #
+        # Attacker-controllable values (tag_name in particular) are passed as
+        # env vars rather than `${{ }}` interpolation so they reach the shell
+        # as data, not code. Tags can contain shell metacharacters; injection
+        # here would run with `id-token: write` available, i.e. the runner
+        # could exchange the OIDC token for AWS credentials.
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          PKG_NAME=$(node -p "require('./package.json').name.replace('@dcl/', '')")
+          if [ "$EVENT_NAME" = "release" ]; then
+            VERSION="$TAG_NAME"
+          else
+            BASE=$(node -p "require('./package.json').version" | sed 's/-development$//')
+            VERSION="${BASE}-${RUN_ID}.commit-${GITHUB_SHA:0:7}"
+          fi
+          echo "package_name=$PKG_NAME"      >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"             >> "$GITHUB_OUTPUT"
+          echo "s3_prefix=$PKG_NAME/$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Deploying $PKG_NAME@$VERSION"
+
+      - name: Install
+        run: ${{ inputs.install-command }}
+        env:
+          HUSKY: 0
+
+      - name: Build
+        run: ${{ inputs.build-command }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          role-session-name: deploy-${{ steps.version.outputs.package_name }}-${{ github.run_id }}
+
+      - name: Sync static assets to S3
+        # Long cache for hashed assets (immutable filenames), short / no-cache
+        # for HTML so new deploys roll out without stale shells.
+        #
+        # Inputs are env-mapped (not `${{ }}` interpolated into the shell) so
+        # that a caller passing a malicious value can't escape into command
+        # context while AWS credentials are active. Defense in depth: callers
+        # are trusted code today, but the blast radius of an injection here
+        # is full S3 write access.
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          DIST_DIR: ${{ inputs.dist-dir }}
+          S3_BUCKET: ${{ inputs.aws-bucket }}
+          S3_PREFIX: ${{ steps.version.outputs.s3_prefix }}
+        run: |
+          aws s3 sync "./$DIST_DIR" \
+            "s3://$S3_BUCKET/$S3_PREFIX/" \
+            --delete \
+            --exclude "*.html" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync "./$DIST_DIR" \
+            "s3://$S3_BUCKET/$S3_PREFIX/" \
+            --exclude "*" \
+            --include "*.html" \
+            --cache-control "public, max-age=0, must-revalidate"
+
+  # Push to default branch → roll out to .zone + .today @ 100%.
+  rollout-auto-zone:
+    if: github.event_name == 'push'
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+      contents: read
+    steps:
+      - name: Set rollout (zone)
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
+          packageName: "@dcl/${{ needs.build-release.outputs.package_name }}"
+          packageVersion: ${{ needs.build-release.outputs.version }}
+          deploymentPath: ${{ inputs.deployment-path }}
+          deploymentEnvironment: 'zone'
+          deploymentName: '_site'
+          percentage: 100
+
+  rollout-auto-today:
+    if: github.event_name == 'push'
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+      contents: read
+    steps:
+      - name: Set rollout (today)
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
+          packageName: "@dcl/${{ needs.build-release.outputs.package_name }}"
+          packageVersion: ${{ needs.build-release.outputs.version }}
+          deploymentPath: ${{ inputs.deployment-path }}
+          deploymentEnvironment: 'today'
+          deploymentName: '_site'
+          percentage: 100
+
+  # Release → roll out to .org @ 100%. Use set-rollout-manual.yml in the
+  # consumer repo to advance the percentage gradually if needed.
+  rollout-release-org:
+    if: github.event_name == 'release'
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+      contents: read
+    steps:
+      - name: Set rollout (org)
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
+          packageName: "@dcl/${{ needs.build-release.outputs.package_name }}"
+          packageVersion: ${{ needs.build-release.outputs.version }}
+          deploymentPath: ${{ inputs.deployment-path }}
+          deploymentEnvironment: 'org'
+          deploymentName: '_site'
+          percentage: 100
+
+  # Manual branch deploy via workflow_dispatch. Caller must pass through the
+  # selected environment + percentage as inputs.
+  rollout-manual:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+      contents: read
+    steps:
+      - name: Set rollout (manual)
+        uses: decentraland/set-rollout-action@26ead404b6944fd0ce0d087cc59fd817607454d6 # v2 branch HEAD as of 2026-05-21 — re-pin via Dependabot
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+          sha: ${{ github.sha }}
+          packageName: "@dcl/${{ needs.build-release.outputs.package_name }}"
+          packageVersion: ${{ needs.build-release.outputs.version }}
+          deploymentPath: ${{ inputs.deployment-path }}
+          deploymentEnvironment: ${{ inputs.deployment-environment }}
+          deploymentName: '_site'
+          percentage: ${{ inputs.rollout-percentage }}
