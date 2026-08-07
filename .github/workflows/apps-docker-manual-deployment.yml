@@ -26,6 +26,15 @@ jobs:
     name: "Deploy to: ${{ inputs.deployment-environment }}"
     runs-on: ubuntu-latest
     steps:
+      - name: Validate image reference format
+        run: |
+          IMAGE="${{ inputs.quay-registry-path }}"
+          TAG="${IMAGE##*:}"
+          if [[ "$TAG" == *":"* ]] || [[ "$TAG" == *"/"* ]]; then
+            echo "::error::quay-registry-path appears malformed: the tag portion contains ':' or '/'. Provide only the tag or SHA (e.g. '0.0.15'), not the full image URL."
+            exit 1
+          fi
+
       - name: Trigger deployment
         id: deploy
         uses: decentraland/dcl-deploy-action@main
@@ -34,3 +43,4 @@ jobs:
           serviceName: ${{ inputs.service-name }}
           env: ${{ inputs.deployment-environment }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
