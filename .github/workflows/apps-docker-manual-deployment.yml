@@ -27,11 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate image reference format
+        env:
+          IMAGE: ${{ inputs.quay-registry-path }}
         run: |
-          IMAGE="${{ inputs.quay-registry-path }}"
-          TAG="${IMAGE##*:}"
-          if [[ "$TAG" == *":"* ]] || [[ "$TAG" == *"/"* ]]; then
-            echo "::error::quay-registry-path appears malformed: the tag portion contains ':' or '/'. Provide only the tag or SHA (e.g. '0.0.15'), not the full image URL."
+          set -euo pipefail
+          if [[ ! "$IMAGE" =~ ^quay\.io/decentraland/[^:[:space:]]+:[A-Za-z0-9_][A-Za-z0-9_.\-]{0,127}$ ]]; then
+            echo "::error::Invalid quay-registry-path: '$IMAGE'. Expected format: quay.io/decentraland/<image-name>:<tag-or-sha> (e.g. quay.io/decentraland/realm-provider:0.0.15)"
             exit 1
           fi
 
