@@ -14,7 +14,7 @@ on:
       quay-registry-path:
         required: true
         type: string
-        description: 'The registry path from quay of the Docker image to deploy. Check "Print image url" step'
+        description: 'Quay image reference in quay.io/decentraland/<image-name>:<tag> format (e.g. quay.io/decentraland/realm-provider:0.0.15)'
     secrets:
       QUAY_USERNAME:
         required: true
