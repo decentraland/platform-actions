@@ -324,7 +324,7 @@ jobs:
 |-------|----------|-------------|
 | `service-name` | Yes | Service name to deploy |
 | `deployment-environment` | Yes | Target environment |
-| `quay-registry-path` | Yes | Full registry path from Quay |
+| `quay-registry-path` | Yes | Quay image reference in `quay.io/decentraland/<image-name>:<tag>` format (e.g. `quay.io/decentraland/realm-provider:0.0.15`) |
 
 ---
 

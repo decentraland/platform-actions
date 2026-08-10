@@ -14,7 +14,7 @@ on:
       quay-registry-path:
         required: true
         type: string
-        description: 'The registry path from quay of the Docker image to deploy. Check "Print image url" step'
+        description: 'Quay image reference in quay.io/decentraland/<image-name>:<tag> format (e.g. quay.io/decentraland/realm-provider:0.0.15)'
     secrets:
       QUAY_USERNAME:
         required: true
@@ -26,6 +26,16 @@ jobs:
     name: "Deploy to: ${{ inputs.deployment-environment }}"
     runs-on: ubuntu-latest
     steps:
+      - name: Validate image reference format
+        env:
+          IMAGE: ${{ inputs.quay-registry-path }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$IMAGE" =~ ^quay\.io/decentraland/[a-z0-9]([a-z0-9._-]*[a-z0-9])?:[A-Za-z0-9_][A-Za-z0-9_.\-]{0,127}$ ]]; then
+            echo "::error::Invalid quay-registry-path. Expected format: quay.io/decentraland/<image-name>:<tag-or-sha> (e.g. quay.io/decentraland/realm-provider:0.0.15)"
+            exit 1
+          fi
+
       - name: Trigger deployment
         id: deploy
         uses: decentraland/dcl-deploy-action@main
