@@ -56,7 +56,10 @@ jobs:
         with:
           image: ${{ inputs.image-name || inputs.service-name }}
           layers: ${{ inputs.layers }}
-          tags: ${{ github.sha }} latest ${{ github.event.release.tag_name }} ${{ inputs.docker-tag }}
+          # The first tag becomes push-to-registry's registry-path, which the deployment job ships.
+          # Release tag leads instead of github.sha so releases stop re-pushing (and thus mutating)
+          # the per-commit tag that apps-docker-next.yml already published for this commit.
+          tags: ${{ github.event.release.tag_name || github.sha }} latest ${{ inputs.docker-tag }}
           dockerfiles: |
             ./Dockerfile
           build-args: |
