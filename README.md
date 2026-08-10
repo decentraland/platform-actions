@@ -252,7 +252,7 @@ jobs:
 
 #### `apps-docker-release.yml`
 
-Build and push Docker images on GitHub releases. Tags images with `latest`, release tag, and commit SHA.
+Build and push Docker images on GitHub releases. Tags images with the release tag and `latest`, and deploys the release-tagged image. The per-commit SHA tag is owned by `apps-docker-next.yml` and is deliberately not re-pushed here, so it stays immutable.
 
 ```yaml
 # .github/workflows/docker-release.yml
