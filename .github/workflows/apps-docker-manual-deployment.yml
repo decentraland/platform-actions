@@ -25,6 +25,9 @@ jobs:
   deployment:
     name: "Deploy to: ${{ inputs.deployment-environment }}"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - name: Validate image reference format
         env:
@@ -38,9 +41,9 @@ jobs:
 
       - name: Trigger deployment
         id: deploy
-        uses: decentraland/dcl-deploy-action@main
+        uses: decentraland/actions/deploy-service@main
         with:
-          dockerImage: "${{ inputs.quay-registry-path }}"
-          serviceName: ${{ inputs.service-name }}
+          docker-image: "${{ inputs.quay-registry-path }}"
+          service-name: ${{ inputs.service-name }}
           env: ${{ inputs.deployment-environment }}
           token: ${{ secrets.GITHUB_TOKEN }}
