@@ -1,0 +1,57 @@
+name: Build and release
+
+# Thin wrapper around decentraland/platform-actions/.github/workflows/sites-build-release.yml.
+# Pin to a tag (e.g. @v1) in production once the reusable workflow is tagged;
+# @main is used here while iterating.
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types:
+      - created
+  workflow_dispatch:
+    inputs:
+      deploymentEnvironment:
+        type: choice
+        description: 'Deployment environment'
+        required: true
+        default: 'zone'
+        options:
+          - zone
+          - today
+          - org
+      rolloutPercentage:
+        description: 'Rollout percentage'
+        required: true
+        default: '100'
+
+jobs:
+  build-release:
+    # TODO: Repin to `@v1` (or the latest tagged release) once this reusable
+    # workflow is stable and tagged. `@main` is fine for the initial rollout
+    # but is a moving target and shouldn't be used in steady-state production
+    # consumers — every site would silently pick up upstream changes.
+    uses: decentraland/platform-actions/.github/workflows/sites-build-release.yml@main
+    permissions:
+      id-token: write
+      contents: read
+      deployments: write
+    with:
+      # Required: caller-specific deployment configuration.
+      deployment-path: '<SITE_PATH>'              # e.g. marketplace, sites, profile
+      aws-role-arn: ${{ vars.AWS_SITES_DEPLOYER_ROLE_ARN }}
+      aws-bucket: ${{ vars.AWS_SITES_BUCKET }}
+
+      # Optional overrides — defaults match the most common case.
+      # node-version: '22.x'
+      # working-directory: '.'                    # e.g. ./webapp for marketplace
+      # install-command: 'npm install'
+      # build-command: 'npm run build'
+      # dist-dir: 'dist'
+
+      # Pass through workflow_dispatch inputs so the rollout-manual job
+      # receives the user's selection.
+      deployment-environment: ${{ github.event.inputs.deploymentEnvironment }}
+      rollout-percentage: ${{ github.event.inputs.rolloutPercentage }}
